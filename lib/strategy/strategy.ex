@@ -126,12 +126,12 @@ defmodule ClusterEcs.Strategy do
                resp = ips |> Enum.map(&(ip_or_hostname_to_nodename(&1, app_prefix)))
 
           resp = ips |> Enum.map(&(ip_or_hostname_to_nodename(&1, app_prefix)))
-          IO.inspect(resp)
+          Logger.debug("Current nodes: #{inspect(resp)}")
 
           {:ok, MapSet.new(resp)}
         else
           err ->
-            IO.inspect(err)
+            Logger.error("Error getting nodes: #{inspect(err)}")
             {:error, []}
         end
 

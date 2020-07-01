@@ -125,7 +125,7 @@ defmodule ClusterEcs.Strategy do
              {:ok, ips} <- extract_ips(desc_task_body) do
                resp = ips |> Enum.map(&(ip_or_hostname_to_nodename(&1, app_prefix)))
 
-          resp = ips |> Enum.map(&(ip_to_nodename(&1, app_prefix)))
+          resp = ips |> Enum.map(&(ip_or_hostname_to_nodename(&1, app_prefix)))
           IO.inspect(resp)
 
           {:ok, MapSet.new(resp)}
@@ -216,7 +216,7 @@ defmodule ClusterEcs.Strategy do
       service_arns
       |> Enum.find(&(Regex.match?(regex, &1)))
       |> case do
-        nil -> 
+        nil ->
           Logger.error("no service matching #{service_name} found")
           {:error, "no service matching #{service_name} found"}
         arn ->

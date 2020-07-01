@@ -123,6 +123,7 @@ defmodule ClusterEcs.Strategy do
              {:ok, task_arns} <- extract_task_arns(list_task_body),
              {:ok, desc_task_body} <- describe_tasks(cluster, task_arns, region),
              {:ok, ips} <- extract_ips(desc_task_body) do
+               resp = ips |> Enum.map(&(ip_or_hostname_to_nodename(&1, app_prefix)))
 
           resp = ips |> Enum.map(&(ip_to_nodename(&1, app_prefix)))
           IO.inspect(resp)
@@ -236,8 +237,17 @@ defmodule ClusterEcs.Strategy do
   end
   defp extract_ips(_), do: {:error, "can't extract ips"}
 
-  defp ip_to_nodename(ip, app_prefix) do
-    :"#{app_prefix}@#{ip}"
+  defp ip_or_hostname_to_nodename(ip, app_prefix) do
+    [_, local_node_host] = Node.self() |> to_string |> String.split("@")
+    if String.match?(local_node_host, ~r/(\d{1,3}\.){3}\d{1,3}/) do
+      # Our cluster is using IP node names
+      :"#{app_prefix}@#{ip}"
+    else
+      # Our cluster is using hostnames. Need to do a reverse IP lookup to get the node name
+      {:ok, ip_tuple} = :inet.parse_address(to_charlist(ip))
+      {:ok, {:hostent, host, _, _, _, _}} = :inet_res.gethostbyaddr(ip_tuple)
+      :"#{app_prefix}@#{host}"
+    end
+
   end
 end
-
